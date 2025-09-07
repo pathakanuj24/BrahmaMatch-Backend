@@ -1,1 +1,15 @@
 .env
+.vscode/
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+*.log
+node_modules/
+dist/
+build/
+*.sqlite3
+*.db
+*.bak
+*.swp
+*.tmp
