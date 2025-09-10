@@ -192,40 +192,73 @@ async def delete_profile_by_userid(user_id: str):
 # Image upload endpoints (owner-only)
 # ----------------------------
 
-@router.post("/user/profile/upload-profile-image")
-async def upload_profile_image(file: UploadFile = File(...), current_user: Dict = Depends(get_current_user)):
-    """
-    Upload and set the authenticated user's profile image.
+# @router.post("/user/profile/upload-profile-image")
+# async def upload_profile_image(file: UploadFile = File(...), current_user: Dict = Depends(get_current_user)):
+#     """
+#     Upload and set the authenticated user's profile image.
 
-    - Expects multipart/form-data with field name `file`.
-    - Encodes the image to base64 and stores it via `profile_service.add_profile_image`.
-    - NOTE: currently stores plain base64. If you prefer a data URI (with MIME),
-      modify `profile_service.add_profile_image` or update this handler to prepend
-      `data:<mime>;base64,` before saving.
+#     - Expects multipart/form-data with field name `file`.
+#     - Encodes the image to base64 and stores it via `profile_service.add_profile_image`.
+#     - NOTE: currently stores plain base64. If you prefer a data URI (with MIME),
+#       modify `profile_service.add_profile_image` or update this handler to prepend
+#       `data:<mime>;base64,` before saving.
+#     """
+#     user_id = current_user.get("user_id")
+#     raw = await file.read()
+
+#     # Optional size check (uncomment if you want to enforce a limit)
+#     # MAX_BYTES = 3 * 1024 * 1024  # 3 MB
+#     # if len(raw) > MAX_BYTES:
+#     #     raise HTTPException(status_code=413, detail="File too large (max 3MB)")
+
+#     b64 = base64.b64encode(raw).decode("utf-8")
+#     await profile_service.add_profile_image(user_id, b64)
+#     return {"message": "Profile image uploaded", "user_id": user_id}
+
+
+# @router.post("/user/profile/upload-gallery-image")
+# async def upload_gallery_image(file: UploadFile = File(...), current_user: Dict = Depends(get_current_user)):
+#     """
+#     Upload a gallery image for the authenticated user.
+
+#     - Accepts multipart/form-data with field `file`.
+#     - Encodes bytes to base64 and appends to the user's `gallery_images` array.
+#     """
+#     user_id = current_user.get("user_id")
+#     raw = await file.read()
+#     b64 = base64.b64encode(raw).decode("utf-8")
+#     await profile_service.add_gallery_image(user_id, b64)
+#     return {"message": "Gallery image added", "user_id": user_id}
+
+
+@router.post("/user/profile/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    image_type: str = "profile",  # "profile" or "gallery"
+    current_user: Dict = Depends(get_current_user)
+):
+    """
+    Upload an image for the authenticated user.
+
+    - Accepts multipart/form-data with `file`.
+    - `image_type`: "profile" to set profile picture, "gallery" to add to gallery.
+    - Encodes bytes to base64 and stores in DB via `profile_service`.
     """
     user_id = current_user.get("user_id")
     raw = await file.read()
 
-    # Optional size check (uncomment if you want to enforce a limit)
-    # MAX_BYTES = 3 * 1024 * 1024  # 3 MB
+    # Optional size limit (e.g., 3 MB)
+    # MAX_BYTES = 3 * 1024 * 1024
     # if len(raw) > MAX_BYTES:
     #     raise HTTPException(status_code=413, detail="File too large (max 3MB)")
 
     b64 = base64.b64encode(raw).decode("utf-8")
-    await profile_service.add_profile_image(user_id, b64)
-    return {"message": "Profile image uploaded", "user_id": user_id}
 
-
-@router.post("/user/profile/upload-gallery-image")
-async def upload_gallery_image(file: UploadFile = File(...), current_user: Dict = Depends(get_current_user)):
-    """
-    Upload a gallery image for the authenticated user.
-
-    - Accepts multipart/form-data with field `file`.
-    - Encodes bytes to base64 and appends to the user's `gallery_images` array.
-    """
-    user_id = current_user.get("user_id")
-    raw = await file.read()
-    b64 = base64.b64encode(raw).decode("utf-8")
-    await profile_service.add_gallery_image(user_id, b64)
-    return {"message": "Gallery image added", "user_id": user_id}
+    if image_type == "profile":
+        await profile_service.add_profile_image(user_id, b64)
+        return {"message": "Profile image uploaded", "user_id": user_id}
+    elif image_type == "gallery":
+        await profile_service.add_gallery_image(user_id, b64)
+        return {"message": "Gallery image added", "user_id": user_id}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid image_type. Use 'profile' or 'gallery'.")

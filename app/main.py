@@ -26,7 +26,7 @@ app.add_middleware(
     allow_origins=origins,            # do NOT use ["*"] if allow_credentials=True in production
     allow_credentials=True,           # set to True if the frontend sends cookies or credentials
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],              # or list specific headers like ["Authorization","Content-Type"]
+    allow_headers=["Authorization"],              # or list specific headers like ["Authorization","Content-Type"]
 )
 
 # register routers (keep these after middleware)
